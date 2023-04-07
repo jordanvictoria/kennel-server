@@ -45,7 +45,7 @@ class HandleRequests(BaseHTTPRequestHandler):
         """Handles GET requests to the server
         """
         # Set the response code to 'Ok'
-        self._set_headers(200)
+        # self._set_headers(200)
         response = {}
 
         # Your new console.log() that outputs to the terminal
@@ -56,6 +56,9 @@ class HandleRequests(BaseHTTPRequestHandler):
         if resource == "animals":
             if id is not None:
                 response = get_single_animal(id)
+                if response is None:
+                    self._set_headers(404)
+                    response = { "message": f"Animal {id} is out playing right now" }
 
             else:
                 response = get_all_animals()
@@ -64,6 +67,9 @@ class HandleRequests(BaseHTTPRequestHandler):
         if resource == "locations":
             if id is not None:
                 response = get_single_location(id)
+                if response is None:
+                    self._set_headers(404)
+                    response = { "message": f"Location {id} does not exist" }
 
             else:
                 response = get_all_locations()
@@ -72,6 +78,9 @@ class HandleRequests(BaseHTTPRequestHandler):
         if resource == "employees":
             if id is not None:
                 response = get_single_employee(id)
+                if response is None:
+                    self._set_headers(404)
+                    response = { "message": f"Employee {id} does not exist" }
 
             else:
                 response = get_all_employees()
@@ -80,9 +89,14 @@ class HandleRequests(BaseHTTPRequestHandler):
         if resource == "customers":
             if id is not None:
                 response = get_single_customer(id)
+                if response is None:
+                    self._set_headers(404)
+                    response = { "message": f"Customer {id} does not exist" }
 
             else:
                 response = get_all_customers()
+        if response is not None:
+            self._set_headers(200)
         # Send a JSON formatted string as a response
         self.wfile.write(json.dumps(response).encode())
 
@@ -117,7 +131,14 @@ class HandleRequests(BaseHTTPRequestHandler):
         # Encode the new animal and send in response
             self.wfile.write(json.dumps(new_animal).encode())
         if resource == "locations":
-            new_location = create_location(post_body)
+            if "name" in post_body and "address" in post_body:
+                self._set_headers(201)
+                new_location = create_location(post_body)
+            else:
+                self._set_headers(400)
+                new_location = {
+                "message": f'{"name is required" if "name" not in post_body else ""} {"address is required" if "address" not in post_body else ""}'
+                }
             self.wfile.write(json.dumps(new_location).encode())
         if resource == "employees":
             new_employee = create_employee(post_body)
@@ -129,28 +150,32 @@ class HandleRequests(BaseHTTPRequestHandler):
     def do_DELETE(self):
         """Handles DELETE requests to the server"""
         # Set a 204 response code
-        self._set_headers(204)
-
+        # self._set_headers(204)
+        response = None
         # Parse the URL
         (resource, id) = self.parse_url(self.path)
 
         # Delete a single animal from the list
         if resource == "animals":
+            self._set_headers(204)
             delete_animal(id)
+            response = ""
         # Encode the new animal and send in response
-        self.wfile.write("".encode())
         if resource == "locations":
+            self._set_headers(204)
             delete_location(id)
+            response = ""
         # Encode the new location and send in response
-        self.wfile.write("".encode())
         if resource == "employees":
+            self._set_headers(204)
             delete_employee(id)
+            response = ""
         # Encode the new employee and send in response
-        self.wfile.write("".encode())
         if resource == "customers":
-            delete_customer(id)
+            self._set_headers(405)
+            response = { "message": "Deleting customers requires contacting the company directly." }
         # Encode the new customer and send in response
-        self.wfile.write("".encode())
+        self.wfile.write(json.dumps(response).encode())
         # A method that handles any PUT request.
     def do_PUT(self):
         """Handles PUT requests to the server"""
