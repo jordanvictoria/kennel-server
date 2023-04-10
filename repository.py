@@ -1,5 +1,5 @@
 DATABASE = {
-    "ANIMALS": [
+    "animals": [
     {
         "id": 1,
         "name": "Snickers",
@@ -25,7 +25,7 @@ DATABASE = {
         "status": "Admitted"
     }
 ],
-    "LOCATIONS": [
+    "locations": [
         {
             "id": 1,
             "name": "Nashville North",
@@ -37,13 +37,13 @@ DATABASE = {
             "address": "209 Emory Drive"
         }
     ],
-    "EMPLOYEES": [
+    "employees": [
         {
             "id": 1,
             "name": "Jenna Solis"
         }
     ],
-    "CUSTOMERS": [
+    "customers": [
         {
             "id": 1,
             "name": "Ryan Tanay"
@@ -52,26 +52,50 @@ DATABASE = {
 }
 
 
-def all():
+def all(resource):
     """For GET requests to collection"""
-    pass
+    return DATABASE[resource]
 
 
-def retrieve():
+def retrieve(resources, id):
     """For GET requests to a single resource"""
-    pass
+    requested_resource = None
+
+    for resource in DATABASE[resources]:
+        if resource["id"] == id:
+            requested_resource = resource
+
+    return requested_resource
 
 
-def create():
+def create(resource, new_resource):
     """For POST requests to a collection"""
-    pass
+    max_id = DATABASE[resource][-1]["id"]
+
+    new_id = max_id + 1
+
+    new_resource["id"] = new_id
+
+    DATABASE[resource].append(new_resource)
+
+    return new_resource
 
 
-def update():
+def update(resources, id, new_resource):
     """For PUT requests to a single resource"""
-    pass
+    for index, resource in enumerate(DATABASE[resources]):
+        if resource["id"] == id:
+            DATABASE[resources][index] = new_resource
+            break
 
 
-def delete():
+def delete(resources, id):
     """For DELETE requests to a single resource"""
-    pass
+    resource_index = -1
+
+    for index, resource in enumerate(DATABASE[resources]):
+        if resource["id"] == id:
+            resource_index = index
+
+    if resource_index >= 0:
+        DATABASE[resources].pop(resource_index)
