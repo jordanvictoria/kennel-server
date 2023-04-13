@@ -1,75 +1,66 @@
-LOCATIONS = [
-    {
-        "id": 1,
-        "name": "Nashville North",
-        "address": "8422 Johnson Pike"
-    },
-    {
-        "id": 2,
-        "name": "Nashville South",
-        "address": "209 Emory Drive"
-    }
-]
+import sqlite3
+from models import Location
+import json
+
 
 def get_all_locations():
     """Method docstring."""
+    # Open a connection to the database
+    with sqlite3.connect("./kennel.sqlite3") as conn:
 
-    return LOCATIONS
+        # Just use these. It's a Black Box.
+        conn.row_factory = sqlite3.Row
+        db_cursor = conn.cursor()
 
-# Function with a single parameter
+        # Write the SQL query to get the information you want
+        db_cursor.execute("""
+        SELECT
+            a.id,
+            a.name,
+            a.address
+        FROM Location a
+        """)
+
+        # Initialize an empty list to hold all location representations
+        locations = []
+
+        # Convert rows of data into a Python list
+        dataset = db_cursor.fetchall()
+
+        # Iterate list of data returned from database
+        for row in dataset:
+
+            # Create an location instance from the current row.
+            # Note that the database fields are specified in
+            # exact order of the parameters defined in the
+            # location class above.
+            location = Location(row['id'], row['name'], row['address'])
+
+            locations.append(location.__dict__)
+
+    return locations
+
 def get_single_location(id):
     """Method docstring."""
-    # Variable to hold the found location, if it exists
-    requested_location = None
+    with sqlite3.connect("./kennel.sqlite3") as conn:
+        conn.row_factory = sqlite3.Row
+        db_cursor = conn.cursor()
 
-    # Iterate the locationS list above. Very similar to the
-    # for..of loops you used in JavaScript.
-    for location in LOCATIONS:
-        # Dictionaries in Python use [] notation to find a key
-        # instead of the dot notation that JavaScript used.
-        if location["id"] == id:
-            requested_location = location
+        # Use a ? parameter to inject a variable's value
+        # into the SQL statement.
+        db_cursor.execute("""
+        SELECT
+            a.id,
+            a.name
+            a.address
+        FROM Location a
+        WHERE a.id = ?
+        """, ( id, ))
 
-    return requested_location
+        # Load the single result into memory
+        data = db_cursor.fetchone()
 
-def create_location(location):
-    """Method docstring."""
-    # Get the id value of the last location in the list
-    max_id = LOCATIONS[-1]["id"]
+        # Create an location instance from the current row
+        location = Location(data['id'], data['name'], data['address'])
 
-    # Add 1 to whatever that number is
-    new_id = max_id + 1
-
-    # Add an `id` property to the location dictionary
-    location["id"] = new_id
-
-    # Add the location dictionary to the list
-    LOCATIONS.append(location)
-
-    # Return the dictionary with `id` property added
-    return location
-
-def delete_location(id):
-    """Method docstring."""
-    # Initial -1 value for location index, in case one isn't found
-    location_index = -1
-
-    # Iterate the LOCATIONS list, but use enumerate() so that you
-    # can access the index value of each item
-    for index, location in enumerate(LOCATIONS):
-        if location["id"] == id:
-            # Found the location. Store the current index.
-            location_index = index
-
-    # If the location was found, use pop(int) to remove it from list
-    if location_index >= 0:
-        LOCATIONS.pop(location_index)
-def update_location(id, new_location):
-    """Method docstring."""
-    # Iterate the LOCATIONS list, but use enumerate() so that
-    # you can access the index value of each item.
-    for index, location in enumerate(LOCATIONS):
-        if location["id"] == id:
-            # Found the location. Update the value.
-            LOCATIONS[index] = new_location
-            break
+        return location.__dict__
