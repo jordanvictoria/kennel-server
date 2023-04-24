@@ -3,17 +3,36 @@ import json
 from models import Animal, Location, Customer
 
 
-def get_all_animals():
+def get_all_animals(query_params):
     """Method docstring."""
     # Open a connection to the database
     with sqlite3.connect("./kennel.sqlite3") as conn:
-
-        # Just use these. It's a Black Box.
         conn.row_factory = sqlite3.Row
         db_cursor = conn.cursor()
 
+        sort_by = ""
+        where_clause = ""
+
+        if len(query_params) != 0:
+            param = query_params[0]
+            [qs_key, qs_value] = param.split("=")
+
+            if qs_key == "location_id":
+                where_clause = f"WHERE a.location_id = {qs_value}"
+
+            if qs_key == "status":
+                where_clause = f"WHERE a.status = '{qs_value}'"
+
+            if qs_key == "_sortBy":
+                if qs_value == 'location':
+                    sort_by = " ORDER BY location_id"
+                if qs_value == 'customer':
+                    sort_by = " ORDER BY customer_id"
+                if qs_value == 'status':
+                    sort_by = " ORDER BY status"
+
         # Write the SQL query to get the information you want
-        db_cursor.execute("""
+    sql_to_execute = f"""
         SELECT
             a.id,
             a.name,
@@ -30,29 +49,31 @@ def get_all_animals():
             ON l.id = a.location_id
         JOIN Customer c
             ON c.id = a.customer_id
-        """)
-
+        {where_clause}
+        {sort_by}
+        """
+    db_cursor.execute(sql_to_execute)
         # Initialize an empty list to hold all animal representations
-        animals = []
+    animals = []
 
-        # Convert rows of data into a Python list
-        dataset = db_cursor.fetchall()
+    # Convert rows of data into a Python list
+    dataset = db_cursor.fetchall()
 
-        # Iterate list of data returned from database
-        for row in dataset:
+    # Iterate list of data returned from database
+    for row in dataset:
 
-            # Create an animal instance from the current row
-            animal = Animal(row['id'], row['name'], row['breed'], row['status'],
-                            row['location_id'], row['customer_id'])
+        # Create an animal instance from the current row
+        animal = Animal(row['id'], row['name'], row['breed'], row['status'],
+                        row['location_id'], row['customer_id'])
 
-            # Create a Location instance from the current row
-            location = Location(row['id'], row['location_name'], row['location_address'])
-            customer = Customer(row['id'], row['customer_name'], row['customer_address'])
-            # Add the dictionary representation of the location to the animal
-            animal.location = location.__dict__
-            animal.customer = customer.__dict__
-            # Add the dictionary representation of the animal to the list
-            animals.append(animal.__dict__)
+        # Create a Location instance from the current row
+        location = Location(row['id'], row['location_name'], row['location_address'])
+        customer = Customer(row['id'], row['customer_name'], row['customer_address'])
+        
+        animal.location = location.__dict__
+        animal.customer = customer.__dict__
+        # Add the dictionary representation of the animal to the list
+        animals.append(animal.__dict__)
 
     return animals
 
@@ -211,6 +232,10 @@ def create_animal(new_animal):
 
 
     return new_animal
+
+
+
+
 
 
 
